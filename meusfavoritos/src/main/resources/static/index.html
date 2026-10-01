@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meus Favoritos</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{input:"#e2e8f0",ring:"#7c3aed","muted-foreground":"#64748b"}}}}</script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useEffect, useCallback, createContext, useContext } = React;
+const cx = (...a) => a.filter(Boolean).join(" ");
+
+/* ---- ícones (SVG estilo lucide) ---- */
+const mk = (d) => ({ className = "", ...p }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" className={className} {...p}>
+    {d.split(" M").map((s, i) => <path key={i} d={(i ? "M" : "") + s} />)}
+  </svg>
+);
+const Heart = mk("M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z");
+const Plus = mk("M5 12h14 M12 5v14");
+const Trash2 = mk("M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2 M10 11v6 M14 11v6");
+const LogOut = mk("M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9");
+const Loader2 = mk("M21 12a9 9 0 1 1-6.219-8.56");
+const CheckCircle2 = mk("M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M9 12l2 2 4-4");
+const AlertCircle = mk("M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 8v4 M12 16h.01");
+const Music = mk("M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z");
+const Film = mk("M3 3h18v18H3z M7 3v18 M17 3v18 M3 12h18 M3 7.5h4 M3 16.5h4 M17 7.5h4 M17 16.5h4");
+const Gamepad2 = mk("M6 11h4 M8 9v4 M15 12h.01 M18 10h.01 M17.32 5H6.68a4 4 0 0 0-3.98 3.59C2.6 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.41-1.41A2 2 0 0 1 9.83 16h4.34a2 2 0 0 1 1.41.59L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.55-.6-6.58-.68-7.26A4 4 0 0 0 17.32 5z");
+const Users = mk("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75");
+const UserCircle = mk("M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6.17 19a6 6 0 0 1 11.66 0");
+
+/* ---- componentes estilo shadcn/ui ---- */
+function Button({ variant = "default", size = "default", className, ...p }) {
+  const v = {
+    default: "bg-slate-900 text-white hover:bg-slate-800",
+    outline: "border border-slate-200 bg-white hover:bg-slate-100",
+    ghost: "hover:bg-slate-100",
+    link: "text-slate-900 underline-offset-4 hover:underline",
+  }[variant];
+  const s = { default: "h-9 px-4 py-2", sm: "h-8 px-3 text-xs", icon: "h-9 w-9" }[size];
+  return <button className={cx("inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50", v, s, className)} {...p} />;
+}
+const Input = ({ className, ...p }) => <input className={cx("flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring", className)} {...p} />;
+const Label = ({ className, ...p }) => <label className={cx("text-sm font-medium leading-none", className)} {...p} />;
+const Badge = ({ variant = "default", className, ...p }) => <span className={cx("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold", variant === "secondary" ? "bg-slate-100 text-slate-900" : "bg-slate-900 text-white", className)} {...p} />;
+const Card = ({ className, ...p }) => <div className={cx("rounded-xl border bg-white shadow-sm", className)} {...p} />;
+const CardHeader = ({ className, ...p }) => <div className={cx("flex flex-col space-y-1.5 p-6", className)} {...p} />;
+const CardTitle = ({ className, ...p }) => <h3 className={cx("font-semibold leading-none tracking-tight", className)} {...p} />;
+const CardDescription = ({ className, ...p }) => <p className={cx("text-sm text-muted-foreground", className)} {...p} />;
+const CardContent = ({ className, ...p }) => <div className={cx("p-6 pt-0", className)} {...p} />;
+
+const TabsCtx = createContext();
+function Tabs({ value, onValueChange, defaultValue, children }) {
+  const [inner, setInner] = useState(defaultValue);
+  const v = value ?? inner, set = onValueChange ?? setInner;
+  return <TabsCtx.Provider value={{ v, set }}><div>{children}</div></TabsCtx.Provider>;
+}
+const TabsList = ({ className, ...p }) => <div className={cx("inline-flex h-10 items-center rounded-lg bg-slate-100 p-1", className)} {...p} />;
+function TabsTrigger({ value, children }) {
+  const { v, set } = useContext(TabsCtx);
+  return <button onClick={() => set(value)} className={cx("inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-all", v === value ? "bg-white shadow text-slate-900" : "text-slate-500 hover:text-slate-900")}>{children}</button>;
+}
+function TabsContent({ value, className, children }) {
+  const { v } = useContext(TabsCtx);
+  return v === value ? <div className={className}>{children}</div> : null;
+}
+
+
+let API = null; // descoberto automaticamente
+async function resolveApi() {
+  if (API !== null) return API;
+  const cands = [...(location.protocol.startsWith("http") ? [""] : []), "http://localhost:8080", "http://localhost:3000"];
+  for (const c of cands) {
+    try {
+      const r = await fetch(c + "/users");
+      if (r.ok && (r.headers.get("content-type") || "").includes("json")) return (API = c);
+    } catch {}
+  }
+  return "http://localhost:8080";
+}
+const SESSION_KEY = "meus_favoritos_user";
+
+async function api(path, opts = {}) {
+  let res;
+  const base = await resolveApi();
+  try {
+    res = await fetch(base + path, { headers: { "Content-Type": "application/json" }, ...opts });
+  } catch {
+    throw new Error(`Sem resposta da API (${location.origin} → ${base || location.origin}). Servidor desligado ou CORS bloqueando ${opts.method || "GET"}.`);
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Erro ${res.status} em ${path}${body ? ": " + body.slice(0, 120) : ""}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+/* ---------- Configuração do catálogo ---------- */
+const CATALOG = {
+  games: {
+    label: "Jogos", singular: "jogo", icon: Gamepad2, fav: "favoriteGames",
+    fields: [["name", "Nome"], ["publisher", "Publisher"], ["developer", "Desenvolvedora"], ["year", "Ano", "number"]],
+    sub: (i) => [i.developer ?? i.developers, i.publisher, i.year].filter(Boolean).join(" · "),
+  },
+  movies: {
+    label: "Filmes", singular: "filme", icon: Film, fav: "favoriteMovies",
+    fields: [["name", "Nome"], ["studio", "Estúdio"], ["director", "Diretor"], ["year", "Ano", "number"]],
+    sub: (i) => [i.director, i.studio, i.year].filter(Boolean).join(" · "),
+  },
+  musics: {
+    label: "Músicas", singular: "música", icon: Music, fav: "favoriteMusics",
+    fields: [["name", "Nome"], ["trackNumber", "Nº da faixa", "number"], ["artist", "Artista"], ["album", "Álbum"], ["publisher", "Gravadora"], ["year", "Ano", "number"]],
+    sub: (i) => [i.artist, i.album, i.year].filter(Boolean).join(" · "),
+  },
+};
+const KEYS = Object.keys(CATALOG);
+
+const selectCls =
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
+function Field({ label, ...props }) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Input {...props} />
+    </div>
+  );
+}
+
+/* ---------- Login / Cadastro ---------- */
+const emptyUser = { nome: "", idade: "", aniversario: "", email: "", password: "", role: "USER" };
+
+function UserForm({ onSubmit, submitLabel, showRole = true, busy }) {
+  const [f, setF] = useState(emptyUser);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const submit = async (e) => {
+    e.preventDefault();
+    const ok = await onSubmit({
+      ...f,
+      idade: f.idade === "" ? null : Number(f.idade),
+      aniversario: f.aniversario || null,
+    });
+    if (ok) setF(emptyUser);
+  };
+  return (
+    <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+      <Field label="Nome" value={f.nome} onChange={set("nome")} required />
+      <Field label="E-mail" type="email" value={f.email} onChange={set("email")} required />
+      <Field label="Senha" type="password" value={f.password} onChange={set("password")} required />
+      <Field label="Idade" type="number" min="0" value={f.idade} onChange={set("idade")} />
+      <Field label="Aniversário" type="date" value={f.aniversario} onChange={set("aniversario")} />
+      {showRole && (
+        <div className="space-y-1.5">
+          <Label>Perfil</Label>
+          <select className={selectCls} value={f.role} onChange={set("role")}>
+            <option value="USER">Usuário</option>
+            <option value="ADM">Administrador</option>
+          </select>
+        </div>
+      )}
+      <div className="sm:col-span-2">
+        <Button type="submit" disabled={busy} className="w-full sm:w-auto">
+          {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+          {submitLabel}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function Login({ onLogin, notify }) {
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const login = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const users = await api("/users");
+      const user = users.find((u) => u.email?.toLowerCase() === email.trim().toLowerCase());
+      if (!user) return notify("E-mail não encontrado.", "error");
+      if (user.password !== password) return notify("Senha incorreta.", "error");
+      onLogin(user);
+    } catch {
+      notify("Não foi possível conectar à API (tentei 8080 e 3000).", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const register = async (data) => {
+    setBusy(true);
+    try {
+      await api("/users", { method: "POST", body: JSON.stringify({ ...data, role: "USER" }) });
+      notify("Conta criada! Agora faça login.");
+      setEmail(data.email);
+      setMode("login");
+      return true;
+    } catch (e) {
+      notify(e.message, "error");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-rose-50 via-white to-violet-100 p-4">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader className="items-center text-center">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-violet-600 text-white">
+            <Heart className="h-6 w-6 fill-current" />
+          </div>
+          <CardTitle className="text-2xl">Meus Favoritos</CardTitle>
+          <CardDescription>
+            {mode === "login" ? "Entre para ver seus jogos, filmes e músicas." : "Crie sua conta."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {mode === "login" ? (
+            <form onSubmit={login} className="space-y-4">
+              <Field label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Field label="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Entrar
+              </Button>
+              <Button type="button" variant="link" className="w-full" onClick={() => setMode("register")}>
+                Não tem conta? Cadastre-se
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-2">
+              <RegisterCompact onSubmit={register} busy={busy} />
+              <Button type="button" variant="link" className="w-full" onClick={() => setMode("login")}>
+                Já tenho conta
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const RegisterCompact = (p) => <UserForm {...p} submitLabel="Criar conta" showRole={false} />;
+
+/* ---------- Catálogo ---------- */
+function CatalogSection({ type, items, reload, notify }) {
+  const cfg = CATALOG[type];
+  const [f, setF] = useState({});
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    const body = {};
+    cfg.fields.forEach(([k, , t]) => {
+      if (f[k] !== undefined && f[k] !== "") body[k] = t === "number" ? Number(f[k]) : f[k];
+    });
+    try {
+      await api(`/${type}`, { method: "POST", body: JSON.stringify(body) });
+      notify(`${cfg.label.slice(0, -1)} cadastrado(a)!`);
+      setF({});
+      reload();
+    } catch (e) {
+      notify(e.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-5">
+      <Card className="lg:col-span-2 h-fit">
+        <CardHeader>
+          <CardTitle className="text-lg">Novo {cfg.singular}</CardTitle>
+          <CardDescription>Adicione ao catálogo geral.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-3">
+            {cfg.fields.map(([k, label, t]) => (
+              <Field key={k} label={label} type={t ?? "text"} value={f[k] ?? ""} required={k === "name"}
+                onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+            ))}
+            <Button type="submit" disabled={busy} className="w-full">
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}Cadastrar
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-3">
+        <CardHeader>
+          <CardTitle className="text-lg">{cfg.label} <Badge variant="secondary" className="ml-1">{items.length}</Badge></CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {items.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nada cadastrado ainda.</p>}
+          {items.map((i) => (
+            <div key={i.id} className="flex items-center gap-3 rounded-lg border p-3">
+              <cfg.icon className="h-5 w-5 shrink-0 text-violet-600" />
+              <div className="min-w-0">
+                <p className="truncate font-medium">{i.name}</p>
+                <p className="truncate text-sm text-muted-foreground">{cfg.sub(i)}</p>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Catalog({ data, reload, notify }) {
+  return (
+    <Tabs defaultValue="games">
+      <TabsList>
+        {KEYS.map((k) => {
+          const I = CATALOG[k].icon;
+          return <TabsTrigger key={k} value={k}><I className="mr-2 h-4 w-4" />{CATALOG[k].label}</TabsTrigger>;
+        })}
+      </TabsList>
+      {KEYS.map((k) => (
+        <TabsContent key={k} value={k} className="mt-4">
+          <CatalogSection type={k} items={data[k]} reload={reload} notify={notify} />
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
+}
+
+/* ---------- Usuários ---------- */
+function UsersTab({ users, reload, notify, me, onOpen, onSelfDeleted }) {
+  const [busy, setBusy] = useState(false);
+
+  const create = async (data) => {
+    setBusy(true);
+    try {
+      await api("/users", { method: "POST", body: JSON.stringify(data) });
+      notify("Usuário cadastrado!");
+      reload();
+      return true;
+    } catch (e) {
+      notify(e.message, "error");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (u) => {
+    if (!confirm(`Excluir ${u.nome || u.email}?`)) return;
+    try {
+      await api(`/users/${u.id}`, { method: "DELETE" });
+      notify("Usuário excluído.");
+      if (u.id === me.id) return onSelfDeleted();
+      reload();
+    } catch (e) {
+      notify(e.message, "error");
+    }
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-5">
+      <Card className="lg:col-span-2 h-fit">
+        <CardHeader>
+          <CardTitle className="text-lg">Novo usuário</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="[&>form]:grid-cols-1">
+            <UserForm onSubmit={create} submitLabel="Cadastrar" busy={busy} />
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-3">
+        <CardHeader>
+          <CardTitle className="text-lg">Usuários <Badge variant="secondary" className="ml-1">{users.length}</Badge></CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {users.map((u) => (
+            <div key={u.id} className="flex items-center gap-3 rounded-lg border p-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 font-semibold text-violet-700">
+                {(u.nome || u.email)[0].toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">
+                  {u.nome || "Sem nome"} {u.role === "ADM" && <Badge className="ml-1">ADM</Badge>}
+                </p>
+                <p className="truncate text-sm text-muted-foreground">{u.email}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => onOpen(u.id)}>Perfil</Button>
+              <Button size="icon" variant="ghost" className="text-red-600" onClick={() => remove(u)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ---------- Perfil ---------- */
+function Profile({ userId, users, data, notify, onChangeUser }) {
+  const [user, setUser] = useState(null);
+  const [pick, setPick] = useState({ games: "", movies: "", musics: "" });
+  const [busy, setBusy] = useState("");
+
+  const load = useCallback(async () => {
+    try { setUser(await api(`/users/${userId}`)); }
+    catch (e) { notify(e.message, "error"); }
+  }, [userId, notify]);
+
+  useEffect(() => { setUser(null); load(); }, [load]);
+
+  const add = async (type) => {
+    if (!pick[type]) return;
+    setBusy(type);
+    try {
+      await api(`/users/${userId}/favorites/${type}/${pick[type]}`, { method: "POST" });
+      notify("Adicionado aos favoritos!");
+      setPick({ ...pick, [type]: "" });
+      await load();
+    } catch (e) {
+      notify(e.message, "error");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  if (!user) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-violet-600" /></div>;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-4 pt-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-violet-600 text-2xl font-bold text-white">
+            {(user.nome || user.email)[0].toUpperCase()}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold">{user.nome || "Sem nome"}</h2>
+            <p className="text-sm text-muted-foreground">
+              {[user.email, user.idade && `${user.idade} anos`, user.aniversario && new Date(user.aniversario + "T00:00").toLocaleDateString("pt-BR")].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          <div className="w-full sm:w-56">
+            <Label className="text-xs text-muted-foreground">Ver perfil de</Label>
+            <select className={selectCls} value={userId} onChange={(e) => onChangeUser(Number(e.target.value))}>
+              {users.map((u) => <option key={u.id} value={u.id}>{u.nome || u.email}</option>)}
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {KEYS.map((type) => {
+          const cfg = CATALOG[type];
+          const favs = user[cfg.fav] ?? [];
+          const favIds = new Set(favs.map((x) => x.id));
+          const available = data[type].filter((i) => !favIds.has(i.id));
+          return (
+            <Card key={type}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <cfg.icon className="h-5 w-5 text-violet-600" />{cfg.label}
+                  <Badge variant="secondary">{favs.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <select className={selectCls} value={pick[type]} onChange={(e) => setPick({ ...pick, [type]: e.target.value })}>
+                    <option value="">Escolher {cfg.singular}…</option>
+                    {available.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  </select>
+                  <Button size="icon" className="shrink-0" disabled={!pick[type] || busy === type} onClick={() => add(type)}>
+                    {busy === type ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {favs.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">Nenhum favorito.</p>}
+                  {favs.map((i) => (
+                    <div key={i.id} className="rounded-lg border bg-rose-50/40 p-3">
+                      <p className="flex items-center gap-2 font-medium">
+                        <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" />
+                        <span className="truncate">{i.name}</span>
+                      </p>
+                      <p className="truncate pl-5 text-xs text-muted-foreground">{cfg.sub(i)}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+function App() {
+  const [session, setSession] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+  });
+  const [toast, setToast] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [data, setData] = useState({ games: [], movies: [], musics: [] });
+  const [tab, setTab] = useState("profile");
+  const [profileId, setProfileId] = useState(session?.id);
+
+  const notify = useCallback((msg, type = "ok") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const reload = useCallback(async () => {
+    try {
+      const [u, games, movies, musics] = await Promise.all([api("/users"), api("/games"), api("/movies"), api("/musics")]);
+      setUsers(u);
+      setData({ games, movies, musics });
+    } catch {
+      notify("Falha ao carregar dados da API.", "error");
+    }
+  }, [notify]);
+
+  useEffect(() => { if (session) reload(); }, [session, reload]);
+
+  const login = (u) => {
+    const { password, ...safe } = u;
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ id: safe.id, nome: safe.nome, email: safe.email, role: safe.role }));
+    setSession({ id: safe.id, nome: safe.nome, email: safe.email, role: safe.role });
+    setProfileId(safe.id);
+    setTab("profile");
+  };
+  const logout = () => {
+    localStorage.removeItem(SESSION_KEY);
+    setSession(null);
+  };
+
+  const Toast = toast && (
+    <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${toast.type === "error" ? "bg-red-600" : "bg-emerald-600"}`}>
+      {toast.type === "error" ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+      {toast.msg}
+    </div>
+  );
+
+  if (!session) return <>{<Login onLogin={login} notify={notify} />}{Toast}</>;
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-violet-600 text-white">
+              <Heart className="h-5 w-5 fill-current" />
+            </div>
+            <span className="text-lg font-bold">Meus Favoritos</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-muted-foreground sm:block">Olá, {session.nome || session.email}</span>
+            <Button variant="outline" size="sm" onClick={logout}><LogOut className="mr-2 h-4 w-4" />Sair</Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList>
+            <TabsTrigger value="profile"><UserCircle className="mr-2 h-4 w-4" />Perfil</TabsTrigger>
+            <TabsTrigger value="catalog"><Film className="mr-2 h-4 w-4" />Catálogo</TabsTrigger>
+            <TabsTrigger value="users"><Users className="mr-2 h-4 w-4" />Usuários</TabsTrigger>
+          </TabsList>
+          <TabsContent value="profile" className="mt-4">
+            <Profile userId={profileId} users={users} data={data} notify={notify} onChangeUser={setProfileId} />
+          </TabsContent>
+          <TabsContent value="catalog" className="mt-4">
+            <Catalog data={data} reload={reload} notify={notify} />
+          </TabsContent>
+          <TabsContent value="users" className="mt-4">
+            <UsersTab users={users} reload={reload} notify={notify} me={session}
+              onOpen={(id) => { setProfileId(id); setTab("profile"); }} onSelfDeleted={logout} />
+          </TabsContent>
+        </Tabs>
+      </main>
+      {Toast}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
