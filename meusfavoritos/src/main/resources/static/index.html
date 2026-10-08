@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meus Favoritos</title>
+<link id="favicon" rel="icon" type="image/svg+xml" href="data:,">
+<meta id="theme-color" name="theme-color" content="#1A56FF">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','system-ui','sans-serif']},colors:{page:"var(--page)",surface:"var(--surface)",muted:"var(--muted)",line:"var(--line)",ink:"var(--ink)",soft:"var(--soft)",accent:"var(--accent)","accent-fg":"var(--accent-fg)","accent-ink":"var(--accent-ink)","accent-soft":"var(--accent-soft)",danger:"var(--danger)","danger-soft":"var(--danger-soft)",ok:"var(--ok)"}}}}</script>
+<style>
+:root{--ok:#15935A;--danger:#DC3545;--accent-soft:color-mix(in srgb,var(--accent) 14%,var(--surface));--danger-soft:color-mix(in srgb,var(--danger) 14%,var(--surface))}
+:root[data-theme=light]{--page:#F3F4F8;--surface:#FFFFFF;--muted:#E9ECF3;--line:#DADEE8;--ink:#151826;--soft:#5A6177;color-scheme:light}
+:root[data-theme=dark]{--page:#0E1016;--surface:#171A23;--muted:#232733;--line:#2B303D;--ink:#F2F4F9;--soft:#9BA3B7;color-scheme:dark}
+body{background:var(--page);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;transition:background .2s,color .2s}
+.field{height:2.9rem;width:100%;border-radius:.85rem;border:1.5px solid var(--line);background:var(--surface);padding:0 1rem;font-size:.95rem;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.field:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line))}
+.field:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script>
+window.HEART="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z";
+/* logo: coração com um "play" vazado (jogos, filmes e músicas) */
+window.logoSvg=function(bg,fg){return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><defs><mask id="c"><rect x="-4" y="-4" width="32" height="32" fill="#fff"/><path d="M10.3 8.2v6.6l5.5-3.3z" fill="#000"/></mask></defs><rect width="40" height="40" rx="12" fill="'+bg+'"/><g transform="translate(7.3 7.7) scale(1.05) rotate(-7 12 12)"><path mask="url(#c)" fill="'+fg+'" d="'+window.HEART+'"/></g></svg>'};
+window.PALETTES=[
+{k:"vermelho",n:"Vermelho",l:"#F2102B",d:"#FF3D52",f:"#D80C25"},
+{k:"laranja",n:"Laranja",l:"#FF6A00",d:"#FF8A1F",li:"#1F0E00",di:"#1F0E00",f:"#D44F00"},
+{k:"amarelo",n:"Amarelo",l:"#FFC800",d:"#FFD81A",li:"#201700",di:"#201700",f:"#946700"},
+{k:"lima",n:"Lima",l:"#84E000",d:"#A3FF1F",li:"#112000",di:"#112000",f:"#4C8A00"},
+{k:"verde",n:"Verde",l:"#00A63F",d:"#1FE06F",di:"#031A0D",f:"#007A2F"},
+{k:"turquesa",n:"Turquesa",l:"#00B8A0",d:"#1DE9C8",li:"#00201B",di:"#00201B",f:"#00877A"},
+{k:"ciano",n:"Ciano",l:"#00AEEF",d:"#2BD0FF",li:"#00202C",di:"#00202C",f:"#007BB0"},
+{k:"azul",n:"Azul",l:"#1A56FF",d:"#4D82FF"},
+{k:"indigo",n:"Índigo",l:"#4A2BFF",d:"#7B63FF"},
+{k:"roxo",n:"Roxo",l:"#8A2BFF",d:"#AA5CFF"},
+{k:"magenta",n:"Magenta",l:"#E01CF0",d:"#F25CFF",f:"#B80DC7"},
+{k:"rosa",n:"Rosa",l:"#FF2D8F",d:"#FF5CAA",f:"#D80F6F"}];
+window.paintTheme=function(t,a){var r=document.documentElement,p=PALETTES.find(function(x){return x.k===a})||PALETTES.find(function(x){return x.k==="azul"});
+var acc=t==="dark"?p.d:p.l,ink=t==="dark"?(p.di||"#fff"):(p.li||"#fff");
+r.dataset.theme=t;r.dataset.accent=p.k;r.style.setProperty("--accent",acc);r.style.setProperty("--accent-ink",ink);r.style.setProperty("--accent-fg",t==="dark"?p.d:(p.f||p.l));
+var fv=document.getElementById("favicon");if(fv)fv.href="data:image/svg+xml,"+encodeURIComponent(window.logoSvg(acc,ink));
+var tc=document.getElementById("theme-color");if(tc)tc.content=acc;return p};
+window.applyTheme=function(t,a){var p=paintTheme(t,a);try{localStorage.setItem("mf_theme",t);localStorage.setItem("mf_accent",p.k)}catch(e){}};
+(function(){var t,a;try{t=localStorage.getItem("mf_theme");a=localStorage.getItem("mf_accent")}catch(e){}
+if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";paintTheme(t,a)})();
+</script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useEffect, useCallback, useRef, createContext, useContext } = React;
+const cx = (...a) => a.filter(Boolean).join(" ");
+
+/* ---- ícones (SVG estilo lucide) ---- */
+const mk = (d) => ({ className = "", ...p }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" className={className} {...p}>
+    {d.split(" M").map((s, i) => <path key={i} d={(i ? "M" : "") + s} />)}
+  </svg>
+);
+const Heart = mk("M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z");
+const Plus = mk("M5 12h14 M12 5v14");
+const Trash2 = mk("M3 6h18 M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6 M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2 M10 11v6 M14 11v6");
+const LogOut = mk("M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9");
+const Loader2 = mk("M21 12a9 9 0 1 1-6.219-8.56");
+const CheckCircle2 = mk("M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M9 12l2 2 4-4");
+const AlertCircle = mk("M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 8v4 M12 16h.01");
+const Music = mk("M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z");
+const Film = mk("M3 3h18v18H3z M7 3v18 M17 3v18 M3 12h18 M3 7.5h4 M3 16.5h4 M17 7.5h4 M17 16.5h4");
+const Gamepad2 = mk("M6 11h4 M8 9v4 M15 12h.01 M18 10h.01 M17.32 5H6.68a4 4 0 0 0-3.98 3.59C2.6 9.42 2 14.46 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.41-1.41A2 2 0 0 1 9.83 16h4.34a2 2 0 0 1 1.41.59L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.55-.6-6.58-.68-7.26A4 4 0 0 0 17.32 5z");
+const Users = mk("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75");
+const UserCircle = mk("M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6.17 19a6 6 0 0 1 11.66 0");
+
+/* ---- ícones extras ---- */
+const Sun = mk("M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 M6.34 17.66l-1.41 1.41 M19.07 4.93l-1.41 1.41");
+const Moon = mk("M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z");
+const Palette = mk("M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z M13.5 6.5h.01 M17.5 10.5h.01 M6.5 12.5h.01 M8.5 7.5h.01");
+const Check = mk("M20 6 9 17l-5-5");
+
+/* ---- componentes base ---- */
+function Button({ variant = "default", size = "default", className, ...p }) {
+  const v = {
+    default: "bg-accent text-accent-ink shadow-sm hover:brightness-110 active:brightness-95",
+    outline: "border-[1.5px] border-line bg-surface hover:bg-muted",
+    ghost: "text-soft hover:bg-muted hover:text-ink",
+    link: "text-accent-fg underline-offset-4 hover:underline",
+  }[variant];
+  const s = { default: "h-11 px-5", sm: "h-9 px-3 text-xs", icon: "h-11 w-11" }[size];
+  return <button className={cx("inline-flex items-center justify-center rounded-xl text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-50", v, s, className)} {...p} />;
+}
+const Input = ({ className, ...p }) => <input className={cx("field", className)} {...p} />;
+const Label = ({ className, ...p }) => <label className={cx("text-[0.9rem] font-semibold leading-none", className)} {...p} />;
+const Badge = ({ variant = "default", className, ...p }) => <span className={cx("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold", variant === "secondary" ? "bg-accent-soft text-accent-fg" : "bg-accent text-accent-ink", className)} {...p} />;
+const Card = ({ className, ...p }) => <div className={cx("rounded-2xl border border-line bg-surface shadow-sm", className)} {...p} />;
+const CardHeader = ({ className, ...p }) => <div className={cx("flex flex-col space-y-1.5 p-7", className)} {...p} />;
+const CardTitle = ({ className, ...p }) => <h3 className={cx("font-bold leading-none tracking-tight", className)} {...p} />;
+const CardDescription = ({ className, ...p }) => <p className={cx("text-sm text-soft", className)} {...p} />;
+const CardContent = ({ className, ...p }) => <div className={cx("p-7 pt-0", className)} {...p} />;
+const LogoMark = ({ className = "h-9 w-9", ghost = false }) => (
+  <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
+    <defs>
+      <mask id="mf-play">
+        <rect x="-4" y="-4" width="32" height="32" fill="#fff" />
+        <path d="M10.3 8.2v6.6l5.5-3.3z" fill="#000" />
+      </mask>
+    </defs>
+    <rect width="40" height="40" rx="12" fill={ghost ? "color-mix(in srgb, var(--accent-ink) 18%, transparent)" : "var(--accent)"} />
+    <g transform="translate(7.3 7.7) scale(1.05) rotate(-7 12 12)">
+      <path mask="url(#mf-play)" fill="var(--accent-ink)" d={window.HEART} />
+    </g>
+  </svg>
+);
+const Logo = ({ size = "h-9 w-9" }) => <LogoMark className={size} />;
+
+const TabsCtx = createContext();
+function Tabs({ value, onValueChange, defaultValue, children }) {
+  const [inner, setInner] = useState(defaultValue);
+  const v = value ?? inner, set = onValueChange ?? setInner;
+  return <TabsCtx.Provider value={{ v, set }}><div>{children}</div></TabsCtx.Provider>;
+}
+const TabsList = ({ className, ...p }) => <div className={cx("inline-flex h-12 max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-muted p-1", className)} {...p} />;
+function TabsTrigger({ value, children }) {
+  const { v, set } = useContext(TabsCtx);
+  return <button onClick={() => set(value)} className={cx("inline-flex items-center whitespace-nowrap rounded-lg px-5 py-2 text-[0.95rem] font-semibold transition", v === value ? "bg-accent text-accent-ink shadow-sm" : "text-soft hover:text-ink")}>{children}</button>;
+}
+function TabsContent({ value, className, children }) {
+  const { v } = useContext(TabsCtx);
+  return v === value ? <div className={className}>{children}</div> : null;
+}
+
+/* ---- tema: claro/escuro + cor principal ---- */
+function ThemeControls() {
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme);
+  const [accent, setAccent] = useState(() => document.documentElement.dataset.accent);
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const dark = theme === "dark";
+
+  useEffect(() => {
+    if (!open) return;
+    const off = (e) => {
+      if (e.type === "keydown" ? e.key === "Escape" : !ref.current?.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", off);
+    document.addEventListener("keydown", off);
+    return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", off); };
+  }, [open]);
+
+  const pickTheme = () => { const t = dark ? "light" : "dark"; setTheme(t); window.applyTheme(t, accent); };
+  const pickAccent = (k) => { setAccent(k); window.applyTheme(theme, k); };
+
+  return (
+    <div ref={ref} className="relative flex items-center gap-1">
+      <Button variant="ghost" size="icon" onClick={pickTheme} title={dark ? "Tema claro" : "Tema escuro"} aria-label={dark ? "Usar tema claro" : "Usar tema escuro"}>
+        {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </Button>
+      <Button variant="ghost" size="icon" onClick={() => setOpen(!open)} title="Cor principal" aria-label="Escolher cor principal" aria-expanded={open}>
+        <Palette className="h-5 w-5" />
+      </Button>
+      {open && (
+        <div className="absolute right-0 top-12 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-line bg-surface p-4 shadow-lg">
+          <p className="mb-3 text-sm font-bold">Cor principal</p>
+          <div className="grid grid-cols-4 gap-2">
+            {window.PALETTES.map((p) => {
+              const on = p.k === accent;
+              return (
+                <button key={p.k} onClick={() => pickAccent(p.k)} aria-pressed={on}
+                  className={cx("flex flex-col items-center gap-1.5 rounded-xl border-[1.5px] p-2 text-xs font-semibold transition", on ? "border-accent bg-accent-soft" : "border-transparent hover:bg-muted")}>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full shadow-sm" style={{ background: dark ? p.d : p.l, color: dark ? (p.di || "#fff") : (p.li || "#fff") }}>
+                    {on && <Check className="h-4 w-4" />}
+                  </span>
+                  {p.n}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+let API = null; // descoberto automaticamente
+async function resolveApi() {
+  if (API !== null) return API;
+  const cands = [...(location.protocol.startsWith("http") ? [""] : []), "http://localhost:8080", "http://localhost:3000"];
+  for (const c of cands) {
+    try {
+      const r = await fetch(c + "/users");
+      if (r.ok && (r.headers.get("content-type") || "").includes("json")) return (API = c);
+    } catch {}
+  }
+  return "http://localhost:8080";
+}
+const SESSION_KEY = "meus_favoritos_user";
+
+async function api(path, opts = {}) {
+  let res;
+  const base = await resolveApi();
+  try {
+    res = await fetch(base + path, { headers: { "Content-Type": "application/json" }, ...opts });
+  } catch {
+    throw new Error(`Sem resposta da API (${location.origin} → ${base || location.origin}). Servidor desligado ou CORS bloqueando ${opts.method || "GET"}.`);
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    const err = new Error(`Erro ${res.status} em ${path}${body ? ": " + body.slice(0, 120) : ""}`);
+    err.status = res.status;
+    throw err;
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+/* ---------- Configuração do catálogo ---------- */
+const CATALOG = {
+  games: {
+    label: "Jogos", singular: "jogo", icon: Gamepad2, fav: "favoriteGames",
+    fields: [["name", "Nome"], ["publisher", "Publisher"], ["developer", "Desenvolvedora"], ["year", "Ano", "number"]],
+    sub: (i) => [i.developer ?? i.developers, i.publisher, i.year].filter(Boolean).join(" · "),
+  },
+  movies: {
+    label: "Filmes", singular: "filme", icon: Film, fav: "favoriteMovies",
+    fields: [["name", "Nome"], ["studio", "Estúdio"], ["director", "Diretor"], ["year", "Ano", "number"]],
+    sub: (i) => [i.director, i.studio, i.year].filter(Boolean).join(" · "),
+  },
+  musics: {
+    label: "Músicas", singular: "música", icon: Music, fav: "favoriteMusics",
+    fields: [["name", "Nome"], ["trackNumber", "Nº da faixa", "number"], ["artist", "Artista"], ["album", "Álbum"], ["publisher", "Gravadora"], ["year", "Ano", "number"]],
+    sub: (i) => [i.artist, i.album, i.year].filter(Boolean).join(" · "),
+  },
+};
+const KEYS = Object.keys(CATALOG);
+
+const selectCls = "field";
+
+function Field({ label, ...props }) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Input {...props} />
+    </div>
+  );
+}
+
+/* ---------- Login / Cadastro ---------- */
+const emptyUser = { nome: "", idade: "", aniversario: "", email: "", password: "", role: "USER" };
+
+function UserForm({ onSubmit, submitLabel, showRole = true, busy, cols = 2 }) {
+  const [f, setF] = useState(emptyUser);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const submit = async (e) => {
+    e.preventDefault();
+    const ok = await onSubmit({
+      ...f,
+      idade: f.idade === "" ? null : Number(f.idade),
+      aniversario: f.aniversario || null,
+    });
+    if (ok) setF(emptyUser);
+  };
+  const two = cols === 2;
+  return (
+    <form onSubmit={submit} className={cx("grid gap-5", two && "sm:grid-cols-2")}>
+      <Field label="Nome" value={f.nome} onChange={set("nome")} required />
+      <Field label="E-mail" type="email" value={f.email} onChange={set("email")} required />
+      <Field label="Senha" type="password" value={f.password} onChange={set("password")} required />
+      <Field label="Idade" type="number" min="0" value={f.idade} onChange={set("idade")} required />
+      <Field label="Aniversário" type="date" value={f.aniversario} onChange={set("aniversario")} required />
+      {showRole && (
+        <div className="space-y-1.5">
+          <Label>Perfil</Label>
+          <select className={selectCls} value={f.role} onChange={set("role")}>
+            <option value="USER">Usuário</option>
+            <option value="ADM">Administrador</option>
+          </select>
+        </div>
+      )}
+      <div className={cx(two && "sm:col-span-2")}>
+        <Button type="submit" disabled={busy} className={cx("h-12 w-full text-base", two && "sm:w-auto sm:min-w-[14rem]")}>
+          {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+          {submitLabel}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function Login({ onLogin, notify }) {
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const login = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const users = await api("/users");
+      const user = users.find((u) => u.email?.toLowerCase() === email.trim().toLowerCase());
+      if (!user) return notify("E-mail não encontrado.", "error");
+      if (user.password !== password) return notify("Senha incorreta.", "error");
+      onLogin(user);
+    } catch {
+      notify("Não foi possível conectar à API (tentei 8080 e 3000).", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // cadastro pela tela de login: SEMPRE role USER
+  const register = async (data) => {
+    setBusy(true);
+    try {
+      await api("/users", { method: "POST", body: JSON.stringify({ ...data, role: "USER" }) });
+      notify("Conta criada! Agora faça login.");
+      setEmail(data.email);
+      setMode("login");
+      return true;
+    } catch (e) {
+      notify(e.status === 500 ? "Não foi possível cadastrar. Esse e-mail já pode estar em uso." : e.message, "error");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isLogin = mode === "login";
+  return (
+    <div className="relative grid min-h-screen lg:grid-cols-2">
+      <div className="absolute right-4 top-4 z-10"><ThemeControls /></div>
+      <aside className="hidden flex-col justify-between bg-accent p-14 text-accent-ink lg:flex">
+        <div className="flex items-center gap-3 text-xl font-extrabold"><LogoMark className="h-11 w-11" ghost />Meus Favoritos</div>
+        <div>
+          <h1 className="max-w-lg text-6xl font-extrabold leading-[1.05] tracking-tight">Tudo que você ama, num só lugar.</h1>
+          <p className="mt-5 max-w-md text-xl opacity-90">Guarde seus jogos, filmes e músicas favoritos do seu jeito.</p>
+        </div>
+        <div className="flex gap-3">
+          {[Gamepad2, Film, Music].map((I, n) => (
+            <div key={n} className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--accent-ink)_18%,transparent)]"><I className="h-7 w-7" /></div>
+          ))}
+        </div>
+      </aside>
+      <main className="flex items-center justify-center p-4 pt-16 sm:p-10">
+        <div className={cx("w-full", isLogin ? "max-w-xl" : "max-w-2xl")}>
+          <div className="mb-6 lg:hidden"><Logo size="h-14 w-14" /></div>
+          <h2 className="text-4xl font-extrabold tracking-tight">{isLogin ? "Bem-vindo de volta" : "Crie sua conta"}</h2>
+          <p className="mb-8 mt-2 text-lg text-soft">{isLogin ? "Entre para ver seus jogos, filmes e músicas." : "Leva menos de um minuto."}</p>
+          <Card className="p-8 sm:p-10">
+            {isLogin ? (
+              <form onSubmit={login} className="space-y-5">
+                <Field label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Field label="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Button type="submit" className="h-12 w-full text-base" disabled={busy}>
+                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Entrar
+                </Button>
+                <Button type="button" variant="link" className="w-full" onClick={() => setMode("register")}>
+                  Não tem conta? Cadastre-se
+                </Button>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                <RegisterCompact onSubmit={register} busy={busy} />
+                <Button type="button" variant="link" className="w-full" onClick={() => setMode("login")}>
+                  Já tenho conta
+                </Button>
+              </div>
+            )}
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const RegisterCompact = (p) => <UserForm {...p} submitLabel="Criar conta" showRole={false} />;
+
+/* ---------- Catálogo ---------- */
+function CatalogSection({ type, items, reload, notify }) {
+  const cfg = CATALOG[type];
+  const [f, setF] = useState({});
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    const body = {};
+    cfg.fields.forEach(([k, , t]) => {
+      if (f[k] !== undefined && f[k] !== "") body[k] = t === "number" ? Number(f[k]) : f[k];
+    });
+    try {
+      await api(`/${type}`, { method: "POST", body: JSON.stringify(body) });
+      notify(`${cfg.label.slice(0, -1)} cadastrado(a)!`);
+      setF({});
+      reload();
+    } catch (e) {
+      notify(e.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(24rem,30%)_1fr]">
+      <Card className="lg:sticky lg:top-24">
+        <CardHeader>
+          <CardTitle className="text-xl">Novo {cfg.singular}</CardTitle>
+          <CardDescription className="text-base">Adicione ao catálogo geral.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-4">
+            {cfg.fields.map(([k, label, t]) => (
+              <Field key={k} label={label} type={t ?? "text"} value={f[k] ?? ""} required={k === "name"}
+                onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+            ))}
+            <Button type="submit" disabled={busy} className="h-12 w-full text-base">
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}Cadastrar
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      <Card className="min-h-[calc(100vh-15rem)]">
+        <CardHeader>
+          <CardTitle className="text-xl">{cfg.label} <Badge variant="secondary" className="ml-1">{items.length}</Badge></CardTitle>
+        </CardHeader>
+        <CardContent>
+          {items.length === 0 && <p className="py-20 text-center text-soft">Nada cadastrado ainda.</p>}
+          <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+            {items.map((i) => (
+              <div key={i.id} className="flex items-center gap-4 rounded-2xl border border-line bg-page p-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-fg"><cfg.icon className="h-6 w-6" /></span>
+                <div className="min-w-0">
+                  <p className="truncate text-base font-semibold">{i.name}</p>
+                  <p className="truncate text-sm text-soft">{cfg.sub(i)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Catalog({ data, reload, notify }) {
+  return (
+    <Tabs defaultValue="games">
+      <TabsList>
+        {KEYS.map((k) => {
+          const I = CATALOG[k].icon;
+          return <TabsTrigger key={k} value={k}><I className="mr-2 h-4 w-4" />{CATALOG[k].label}</TabsTrigger>;
+        })}
+      </TabsList>
+      {KEYS.map((k) => (
+        <TabsContent key={k} value={k} className="mt-4">
+          <CatalogSection type={k} items={data[k]} reload={reload} notify={notify} />
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
+}
+
+/* ---------- Usuários ---------- */
+function UsersTab({ users, reload, notify, me, onOpen, onSelfDeleted }) {
+  const [busy, setBusy] = useState(false);
+
+  const create = async (data) => {
+    setBusy(true);
+    try {
+      await api("/users", { method: "POST", body: JSON.stringify(data) });
+      notify("Usuário cadastrado!");
+      reload();
+      return true;
+    } catch (e) {
+      notify(e.message, "error");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (u) => {
+    if (u.role === "ADM" && users.filter((x) => x.role === "ADM").length <= 1) {
+      return notify("Não é possível excluir o último administrador.", "error");
+    }
+    if (!confirm(`Excluir ${u.nome || u.email}?`)) return;
+    try {
+      await api(`/users/${u.id}`, { method: "DELETE" });
+      notify("Usuário excluído.");
+      if (u.id === me.id) return onSelfDeleted();
+      reload();
+    } catch (e) {
+      notify(e.message, "error");
+    }
+  };
+
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(24rem,30%)_1fr]">
+      <Card className="lg:sticky lg:top-24">
+        <CardHeader>
+          <CardTitle className="text-xl">Novo usuário</CardTitle>
+          <CardDescription className="text-base">Defina também se ele será Usuário ou Administrador.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UserForm onSubmit={create} submitLabel="Cadastrar" busy={busy} cols={1} />
+        </CardContent>
+      </Card>
+      <Card className="min-h-[calc(100vh-15rem)]">
+        <CardHeader>
+          <CardTitle className="text-xl">Usuários <Badge variant="secondary" className="ml-1">{users.length}</Badge></CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 xl:grid-cols-2">
+            {users.map((u) => (
+              <div key={u.id} className="flex items-center gap-4 rounded-2xl border border-line bg-page p-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-bold text-accent-fg">
+                  {(u.nome || u.email)[0].toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold">
+                    {u.nome || "Sem nome"} {u.role === "ADM" && <Badge className="ml-1">ADM</Badge>}
+                  </p>
+                  <p className="truncate text-sm text-soft">{u.email}</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => onOpen(u.id)}>Perfil</Button>
+                <Button size="icon" variant="ghost" className="!text-danger hover:!bg-danger-soft" onClick={() => remove(u)} title="Excluir usuário" aria-label="Excluir usuário">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ---------- Perfil ---------- */
+function Profile({ userId, users, data, notify, onChangeUser, canSwitch }) {
+  const [user, setUser] = useState(null);
+  const [pick, setPick] = useState({ games: "", movies: "", musics: "" });
+  const [busy, setBusy] = useState("");
+
+  const load = useCallback(async () => {
+    try { setUser(await api(`/users/${userId}`)); }
+    catch (e) { notify(e.message, "error"); }
+  }, [userId, notify]);
+
+  useEffect(() => { setUser(null); load(); }, [load]);
+
+  const add = async (type) => {
+    if (!pick[type]) return;
+    setBusy(type);
+    try {
+      await api(`/users/${userId}/favorites/${type}/${pick[type]}`, { method: "POST" });
+      notify("Adicionado aos favoritos!");
+      setPick({ ...pick, [type]: "" });
+      await load();
+    } catch (e) {
+      notify(e.message, "error");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  if (!user) return <div className="flex justify-center py-24"><Loader2 className="h-9 w-9 animate-spin text-accent-fg" /></div>;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-5 pt-7">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-3xl font-bold text-accent-ink">
+            {(user.nome || user.email)[0].toUpperCase()}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold">{user.nome || "Sem nome"} {user.role === "ADM" && <Badge className="ml-1 align-middle">ADM</Badge>}</h2>
+            <p className="mt-1 text-soft">
+              {[user.email, user.idade && `${user.idade} anos`, user.aniversario && new Date(user.aniversario + "T00:00").toLocaleDateString("pt-BR")].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          {canSwitch && (
+            <div className="w-full space-y-1.5 sm:w-72">
+              <Label className="text-xs text-soft">Ver perfil de</Label>
+              <select className={selectCls} value={userId} onChange={(e) => onChangeUser(Number(e.target.value))}>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.nome || u.email}</option>)}
+              </select>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        {KEYS.map((type) => {
+          const cfg = CATALOG[type];
+          const favs = user[cfg.fav] ?? [];
+          const favIds = new Set(favs.map((x) => x.id));
+          const available = data[type].filter((i) => !favIds.has(i.id));
+          return (
+            <Card key={type} className="min-h-[calc(100vh-24rem)]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <cfg.icon className="h-6 w-6 text-accent-fg" />{cfg.label}
+                  <Badge variant="secondary">{favs.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex gap-2">
+                  <select className={selectCls} value={pick[type]} onChange={(e) => setPick({ ...pick, [type]: e.target.value })}>
+                    <option value="">Escolher {cfg.singular}…</option>
+                    {available.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  </select>
+                  <Button size="icon" className="h-[2.9rem] w-[2.9rem] shrink-0" disabled={!pick[type] || busy === type} onClick={() => add(type)} title="Favoritar" aria-label="Favoritar">
+                    {busy === type ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <div className="space-y-2.5">
+                  {favs.length === 0 && <p className="py-8 text-center text-soft">Nenhum favorito.</p>}
+                  {favs.map((i) => (
+                    <div key={i.id} className="rounded-2xl border border-transparent bg-accent-soft p-4">
+                      <p className="flex items-center gap-2 text-base font-semibold">
+                        <Heart className="h-4 w-4 shrink-0 fill-accent-fg text-accent-fg" />
+                        <span className="truncate">{i.name}</span>
+                      </p>
+                      <p className="truncate pl-6 text-sm text-soft">{cfg.sub(i)}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+function App() {
+  const [session, setSession] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+  });
+  const [toast, setToast] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [data, setData] = useState({ games: [], movies: [], musics: [] });
+  const [tab, setTab] = useState("profile");
+  const [profileId, setProfileId] = useState(session?.id);
+
+  const hasSession = !!session;
+  const isAdm = session?.role === "ADM";
+
+  const notify = useCallback((msg, type = "ok") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const saveSession = useCallback((u) => {
+    const s = { id: u.id, nome: u.nome, email: u.email, role: u.role || "USER" };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    setSession(s);
+  }, []);
+
+  const dropSession = useCallback(() => {
+    localStorage.removeItem(SESSION_KEY);
+    setSession(null);
+    setUsers([]);
+  }, []);
+
+  // confere no banco quem é o usuário e qual o perfil dele (evita role "forjada" no localStorage)
+  useEffect(() => {
+    if (!hasSession) return;
+    api(`/users/${session.id}`)
+      .then((u) => (u && u.id ? saveSession(u) : dropSession()))
+      .catch(() => {});
+  }, [hasSession]);
+
+  const reload = useCallback(async () => {
+    try {
+      const [games, movies, musics] = await Promise.all([api("/games"), api("/movies"), api("/musics")]);
+      setData({ games, movies, musics });
+      // só o ADM carrega/vê a lista de usuários
+      setUsers(isAdm ? await api("/users") : []);
+    } catch {
+      notify("Falha ao carregar dados da API.", "error");
+    }
+  }, [notify, isAdm]);
+
+  useEffect(() => { if (hasSession) reload(); }, [hasSession, reload]);
+
+  const login = (u) => {
+    saveSession(u);
+    setProfileId(u.id);
+    setTab("profile");
+  };
+  const logout = () => dropSession();
+
+  const Toast = toast && (
+    <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg ${toast.type === "error" ? "bg-danger" : "bg-ok"}`}>
+      {toast.type === "error" ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+      {toast.msg}
+    </div>
+  );
+
+  if (!session) return <>{<Login onLogin={login} notify={notify} />}{Toast}</>;
+
+  const activeTab = tab === "users" && !isAdm ? "profile" : tab;
+
+  return (
+    <div className="min-h-screen bg-page">
+      <header className="sticky top-0 z-40 border-b border-line bg-surface">
+        <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between px-4 py-3 sm:px-8 lg:px-12">
+          <div className="flex items-center gap-3">
+            <Logo size="h-10 w-10" />
+            <span className="text-xl font-extrabold tracking-tight">Meus Favoritos</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="mr-1 hidden items-center gap-2 text-sm text-soft sm:flex">Olá, {session.nome || session.email} {isAdm && <Badge>ADM</Badge>}</span>
+            <ThemeControls />
+            <Button variant="outline" size="sm" className="h-10" onClick={logout}><LogOut className="mr-2 h-4 w-4" />Sair</Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-[1920px] px-4 py-8 sm:px-8 lg:px-12">
+        <Tabs value={activeTab} onValueChange={setTab}>
+          <TabsList>
+            <TabsTrigger value="profile"><UserCircle className="mr-2 h-4 w-4" />Perfil</TabsTrigger>
+            <TabsTrigger value="catalog"><Film className="mr-2 h-4 w-4" />Catálogo</TabsTrigger>
+            {isAdm && <TabsTrigger value="users"><Users className="mr-2 h-4 w-4" />Usuários</TabsTrigger>}
+          </TabsList>
+          <TabsContent value="profile" className="mt-6">
+            <Profile userId={profileId} users={users} data={data} notify={notify} onChangeUser={setProfileId} canSwitch={isAdm} />
+          </TabsContent>
+          <TabsContent value="catalog" className="mt-6">
+            <Catalog data={data} reload={reload} notify={notify} />
+          </TabsContent>
+          {isAdm && (
+            <TabsContent value="users" className="mt-6">
+              <UsersTab users={users} reload={reload} notify={notify} me={session}
+                onOpen={(id) => { setProfileId(id); setTab("profile"); }} onSelfDeleted={logout} />
+            </TabsContent>
+          )}
+        </Tabs>
+      </main>
+      {Toast}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
