@@ -1,11 +1,6 @@
 package com.spring.meusfavoritos.model;
 
 import java.time.LocalDate;
-<<<<<<< HEAD
-import java.util.HashSet;
-import java.util.Set;
-
-=======
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -16,7 +11,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
->>>>>>> 6916921 (v1.2)
 import com.spring.meusfavoritos.model.enumeration.Role;
 
 import jakarta.persistence.Column;
@@ -29,10 +23,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-<<<<<<< HEAD
-=======
 import jakarta.persistence.PrePersist;
->>>>>>> 6916921 (v1.2)
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,33 +38,25 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Table(name = "users")
-<<<<<<< HEAD
-public class UserModel {
-=======
 public class UserModel implements UserDetails {
->>>>>>> 6916921 (v1.2)
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
 	private String nome;
-<<<<<<< HEAD
-=======
 	
 	@Column(name = "user_name", nullable = false, unique = true)
 	private String userName;
 	
->>>>>>> 6916921 (v1.2)
 	private Integer idade;
+	
 	private LocalDate aniversario;
 	
 	@Column(nullable = false, unique = true)
 	private String email;
 
-<<<<<<< HEAD
-=======
 	@JsonIgnore
->>>>>>> 6916921 (v1.2)
 	@Column(nullable = false)
 	private String password;
 	
@@ -85,10 +68,7 @@ public class UserModel implements UserDetails {
 		name = "user_favorite_games",
 		joinColumns = @JoinColumn(name = "user_id"),
 		inverseJoinColumns = @JoinColumn(name = "game_id"))
-<<<<<<< HEAD
-=======
 	@Builder.Default
->>>>>>> 6916921 (v1.2)
 	private Set<GameModel> favoriteGames = new HashSet<>();
 
 	@ManyToMany
@@ -96,10 +76,7 @@ public class UserModel implements UserDetails {
 		name = "user_favorite_movies",
 		joinColumns = @JoinColumn(name = "user_id"),
 		inverseJoinColumns = @JoinColumn(name = "movie_id"))
-<<<<<<< HEAD
-=======
 	@Builder.Default
->>>>>>> 6916921 (v1.2)
 	private Set<MovieModel> favoriteMovies = new HashSet<>();
 
 	@ManyToMany
@@ -107,19 +84,16 @@ public class UserModel implements UserDetails {
 		name = "user_favorite_musics",
 		joinColumns = @JoinColumn(name = "user_id"),
 		inverseJoinColumns = @JoinColumn(name = "music_id"))
-<<<<<<< HEAD
-	private Set<MusicModel> favoriteMusics = new HashSet<>();
-=======
 	@Builder.Default
 	private Set<MusicModel> favoriteMusics = new HashSet<>();
 	
 	@PrePersist
 	public void gerarUserName() {
-	    if (this.userName == null && this.nome != null) {
-	        this.userName = this.nome.toLowerCase()
-	                .replace(" ", "")
-	                .concat("#" + UUID.randomUUID().toString().substring(0, 8));
-	    }
+		if (this.userName == null && this.nome != null) {
+			this.userName = this.nome.toLowerCase()
+					.replace(" ", "")
+					.concat("#" + UUID.randomUUID().toString().substring(0, 8));
+		}
 	}
 	
 	@Override
@@ -131,5 +105,4 @@ public class UserModel implements UserDetails {
 	public String getUsername() {
 		return email;
 	}
->>>>>>> 6916921 (v1.2)
 }
